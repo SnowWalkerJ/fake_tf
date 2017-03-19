@@ -6,7 +6,7 @@ Of course, all the calculations are done on CPU without multiprocess.
 
 ## TODO list
 - ~~cache for repeated calculation~~
-- operations such as ~~abs~~, pow
+- ~~operations such as abs, pow~~
 - cache for repeated constants and operations
 - ~~random initialization~~
 - None in placeholder shape

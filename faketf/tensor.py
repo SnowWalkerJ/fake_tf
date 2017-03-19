@@ -87,6 +87,9 @@ class Tensor:
             other = Constant(other)
         return MatMulOp(self, other)
 
+    def __pow__(self, power: float, modulo=None):
+        return PowerOp(self, power)
+
     def __abs__(self):
         return AbsOp(self)
 
@@ -329,6 +332,24 @@ class AbsOp(Op):
         if uplevel is None:
             uplevel = Constant(np.ones(self.shape, dtype=np.float32))
         return {self.income: uplevel * AbsDerivation(self.income)}
+
+
+class PowerOp(Op):
+    def __init__(self, income: Tensor, pow: float):
+        self.income = income
+        self.power = pow
+        self.direct_dependencies = {income}
+        super(PowerOp, self).__init__(shape=self.income.shape, dtype=np.float32, name="Power")
+
+    @cached
+    def eval(self, feed_dict=None):
+        down_level = self.income.eval(feed_dict)
+        return down_level ** self.power
+
+    def get_gradients(self, uplevel=None):
+        if uplevel is None:
+            uplevel = Constant(np.ones(self.shape, dtype=self.dtype))
+        return {self.income: uplevel * self.power * self.income ** (self.power - 1)}
 
 
 class TransposeOp(Op):
