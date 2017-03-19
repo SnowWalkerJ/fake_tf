@@ -17,7 +17,6 @@ class Graph:
         self.variables = {}
         self.constants = {}
         self.trainable = set()
-        self.cache = None
         self.mute = False
 
     @contextmanager
@@ -25,6 +24,14 @@ class Graph:
         self.mute = True
         yield
         self.mute = False
+
+    @contextmanager
+    def enable_cache(self):
+        for tensor in self.tensors.values():
+            tensor.cache = True
+        yield
+        for tensor in self.tensors.values():
+            tensor.cache = False
 
     def add_tensor(self, tensor):
         if tensor.name in self.tensors:
