@@ -155,7 +155,7 @@ class Placeholder(Tensor):
 def cached(func):
     def eval(self, feed_dict: dict=None):
         if self.cache and self.cached_value is not None:
-            return self.cache_value
+            return self.cached_value
         value = func(self, feed_dict)
         if self.cache:
             self.cached_value = value
