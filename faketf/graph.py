@@ -1,4 +1,4 @@
-from .constant import TYPE_VARIABLE, TYPE_OPERATION, TYPE_CONSTANT
+from .constant import TYPE_VARIABLE, TYPE_OPERATION, TYPE_CONSTANT, TYPE_PLACEHOLDER
 from contextlib import contextmanager
 __graph = None
 
@@ -53,6 +53,8 @@ class Graph:
             prefix = "Op"
         elif tensor.tensor_type == TYPE_CONSTANT:
             prefix = "C"
+        elif tensor.tensor_type == TYPE_PLACEHOLDER:
+            prefix = "P"
         else:
             prefix = "T"
         if self.mute:

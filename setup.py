@@ -8,5 +8,6 @@ setup(
     license='',
     author='SnowWalkerJ',
     author_email='jike3212001@163.com',
-    description=''
+    description='',
+    requires=["numpy"]
 )

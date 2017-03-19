@@ -62,6 +62,11 @@ class Tensor:
             other = Constant(other)
         return SubOp(self, other)
 
+    def __rsub__(self, other):
+        if not isinstance(other, Tensor):
+            other = Constant(other)
+        return SubOp(other, self)
+
     def __mul__(self, other):
         if other is Zero:
             return Constant(np.zeros(self.shape, self.dtype))
@@ -69,7 +74,10 @@ class Tensor:
             return self
         elif not isinstance(other, Tensor):
             other = Constant(other)
-        return MulOp(self, other)
+        if self in (Zero, Unit):
+            return other.__mul__(self)
+        else:
+            return MulOp(self, other)
 
     def __rmul__(self, other):
         return self.__mul__(other)
@@ -78,6 +86,9 @@ class Tensor:
         if not isinstance(other, Tensor):
             other = Constant(other)
         return MatMulOp(self, other)
+
+    def __abs__(self):
+        return AbsOp(self)
 
 
 class Variable(Tensor):
@@ -102,8 +113,17 @@ class Variable(Tensor):
         value = np.asarray(value, dtype=self.dtype)
         if not value.shape == self.shape:
             raise TypeError("AssignOp require shape match: `%s` and `%s`" % (self.shape, value.shape))
+        self.values = value
 
     def assign_add(self, delta):
+        delta = np.asarray(delta)
+        ndim1, ndim2 = len(self.shape), len(delta.shape)
+        compatible, need_broadcast = broadcastable(self.shape, delta.shape)
+        if not compatible:
+            raise TypeError("AssignAdd shape not compatible: `%s` and `%s`" % (self.shape, delta.shape))
+        if need_broadcast == 0:
+            reduce_dims = tuple(range(ndim2-ndim1))
+            delta = delta.sum(axis=reduce_dims)
         self.values += delta
 
 
@@ -163,6 +183,31 @@ def cached(func):
     return eval
 
 
+def broadcastable(shape1: tuple, shape2: tuple):
+    shape1, shape2 = np.array(shape1), np.array(shape2)
+    ndim1, ndim2 = shape1.size, shape2.size
+    if ndim1 > ndim2:
+        padded_shape2 = np.pad(shape2, ((ndim1 - ndim2, 0),), mode="constant", constant_values=1)
+        if (padded_shape2 <= shape1).all():
+            return True, 1
+        else:
+            return False, None
+    elif ndim2 > ndim1:
+        padded_shape1 = np.pad(shape1, ((ndim2 - ndim1, 0),), mode="constant", constant_values=1)
+        if (padded_shape1 <= shape2).all():
+            return True, 0
+        else:
+            return False, None
+    elif (shape1 == shape2).all():
+        return True, None
+    elif (shape1 >=shape2).all():
+        return True, 1
+    elif (shape2 >=shape1).all():
+        return True, 0
+    else:
+        return False, None
+
+
 class Op(Tensor):
     gradients = None
 
@@ -195,6 +240,8 @@ class Op(Tensor):
         return dependency
 
     def get_gradients(self, uplevel=None):
+        if uplevel is None:
+            uplevel = Constant(np.ones(self.shape, dtype=self.dtype))
         return {k: uplevel*v for k, v in self.gradients.items()}
 
 
@@ -252,6 +299,38 @@ class MulOp(Op):
         return self.t1.eval(feed_dict) * self.t2.eval(feed_dict)
 
 
+class AbsDerivation(Op):
+    def __init__(self, income: Tensor):
+        self.income = income
+        self.direct_dependencies = {income}
+        super(AbsDerivation, self).__init__(shape=income.shape, dtype=income.dtype, name="AbsDerivation")
+
+    @cached
+    def eval(self, feed_dict=None):
+        down_level = self.income.eval(feed_dict)
+        return np.sign(down_level)
+
+    def auto_derivate(self, trainable_variables: set, uplevel=None):
+        raise NotImplementedError
+
+
+class AbsOp(Op):
+    def __init__(self, income: Tensor):
+        self.income = income
+        self.direct_dependencies = {income}
+        super(AbsOp, self).__init__(shape=income.shape, dtype=income.dtype, name="Abs")
+
+    @cached
+    def eval(self, feed_dict=None):
+        down_level = self.income.eval(feed_dict)
+        return np.abs(down_level)
+
+    def get_gradients(self, uplevel=None):
+        if uplevel is None:
+            uplevel = Constant(np.ones(self.shape, dtype=np.float32))
+        return {self.income: uplevel * AbsDerivation(self.income)}
+
+
 class TransposeOp(Op):
     def __init__(self, income: Tensor):
         self.income = income
@@ -269,7 +348,7 @@ class TransposeOp(Op):
     def get_gradients(self, uplevel: Tensor=None):
         if uplevel is None:
             uplevel = Constant(np.ones(self.shape))
-        return TransposeOp(uplevel)
+        return {self.income: TransposeOp(uplevel)}
 
 
 class MatMulOp(Op):
