@@ -11,6 +11,9 @@ class SGD(Trainer):
         with self.graph.compute_gradients():
             self.gradients = self.target.auto_derivate(self.trainable_variables)
 
+        from pprint import pprint
+        pprint({k: g.tree() for k, g in self.gradients.items()})
+
     def train(self, feed_dict: dict=None):
         gradients = {}
         with self.graph.enable_cache():
