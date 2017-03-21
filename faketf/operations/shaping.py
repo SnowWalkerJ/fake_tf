@@ -19,7 +19,7 @@ class ReverseReduceOp(Op):
         # if t1.shape != t2.shape:
         #     raise TypeError("shape of %s and %s incompatible: `%s` and `%s`" % (t1.name, t2.name, t1.shape, t2.shape))
         self.income = income
-        self.origin = origin.income
+        self.origin = origin
         axis = origin.axis
         original_shape = origin.income.shape
         if isinstance(axis, int):
@@ -36,7 +36,7 @@ class ReverseReduceOp(Op):
     @cached
     def eval(self, feed_dict=None):
         down_level = self.income.eval(feed_dict)
-        up_level = self.origin.eval(feed_dict)
+        up_level = self.origin.income.eval(feed_dict)
         expand_dims = {ax: up_level.shape[ax] for ax in self.axis}
         for ax, rep in expand_dims.items():
             down_level = np.expand_dims(down_level, axis=ax)

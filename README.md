@@ -9,7 +9,7 @@ Of course, all the calculations are done on CPU without multiprocess.
 - ~~operations such as abs, pow~~
 - cache for repeated constants and operations
 - ~~random initialization~~
-- None in placeholder shape
+- ~~None in placeholder shape~~
 - ~~activation functions~~
 - ~~SGD~~
 - higher end apis
