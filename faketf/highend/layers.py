@@ -1,5 +1,5 @@
 from ..tensor import Variable, Tensor
-from ..initializetion import Initializer, NormalInitializer, ZeroInitializer
+from ..initialization import Initializer, NormalInitializer, ZeroInitializer
 import numpy as np
 
 

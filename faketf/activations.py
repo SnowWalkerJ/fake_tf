@@ -13,7 +13,7 @@ def sigmoid(income: Tensor)->Tensor:
 class Sigmoid(Op):
     def __init__(self, income: Tensor):
         self.income = income
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         self.gradients = {income: self * (1 - self)}
         super(Sigmoid, self).__init__(shape=income.shape, dtype=income.dtype, name="Sigmoid")
 
@@ -26,7 +26,7 @@ class Sigmoid(Op):
 class Relu(Op):
     def __init__(self, income: Tensor):
         self.income = income
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(Relu, self).__init__(shape=income.shape, dtype=income.dtype, name="Relu")
 
     @cached
@@ -43,7 +43,7 @@ class Relu(Op):
 class ReluDerivation(Op):
     def __init__(self, income: Tensor):
         self.income = income
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(ReluDerivation, self).__init__(shape=income.shape, dtype=income.dtype, name="ReluDerivation")
 
     @cached

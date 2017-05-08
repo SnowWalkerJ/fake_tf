@@ -38,11 +38,18 @@ class Tensor:
     def transpose(self):
         return TransposeOp(self)
 
+    def is_scalar(self) -> bool:
+        return len(self.shape) == 0
+
     def __hash__(self):
         return hash(self.name)
 
     def __str__(self):
         return "%s: <%s>" % (self.tensor_type, self.name)
+
+    def __eq__(self, other):
+        return type(self) == type(other) \
+               and (not isinstance(self, Op) or self.direct_dependencies == other.direct_dependencies)
 
     def __repr__(self):
         return str(self)
@@ -216,7 +223,7 @@ class Op(Tensor):
 
     def __init__(self, *args, **kwargs):
         self.tensor_type = TYPE_OPERATION
-        super(Op, self).__init__(dependency=Op.get_dependency(self.direct_dependencies), *args, **kwargs)
+        super(Op, self).__init__(dependency=Op.get_dependency(set(self.direct_dependencies)), *args, **kwargs)
 
     def auto_derivate(self, trainable_variables: set, uplevel=None):
         to_be_trained = self.dependency & trainable_variables
@@ -254,7 +261,7 @@ class AddOp(Op):
         #     raise TypeError("shape of %s and %s incompatible: `%s` and `%s`" % (t1.name, t2.name, t1.shape, t2.shape))
         self.t1 = t1
         self.t2 = t2
-        self.direct_dependencies = {t1, t2}
+        self.direct_dependencies = [t1, t2]
         self.gradients = {
             t1: Unit,
             t2: Unit,
@@ -272,7 +279,7 @@ class SubOp(Op):
         #     raise TypeError("shape of %s and %s incompatible: `%s` and `%s`" % (t1.name, t2.name, t1.shape, t2.shape))
         self.t1 = t1
         self.t2 = t2
-        self.direct_dependencies = {t1, t2}
+        self.direct_dependencies = [t1, t2]
         self.gradients = {
             t1: Unit,
             t2: Constant(-1.0),
@@ -290,7 +297,7 @@ class MulOp(Op):
         #     raise TypeError("shape of %s and %s incompatible: `%s` and `%s`" % (t1.name, t2.name, t1.shape, t2.shape))
         self.t1 = t1
         self.t2 = t2
-        self.direct_dependencies = {t1, t2}
+        self.direct_dependencies = [t1, t2]
         self.gradients = {
             t1: t2,
             t2: t1,
@@ -320,7 +327,7 @@ class AbsDerivation(Op):
 class AbsOp(Op):
     def __init__(self, income: Tensor):
         self.income = income
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(AbsOp, self).__init__(shape=income.shape, dtype=income.dtype, name="Abs")
 
     @cached
@@ -338,7 +345,7 @@ class PowerOp(Op):
     def __init__(self, income: Tensor, pow: float):
         self.income = income
         self.power = pow
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(PowerOp, self).__init__(shape=self.income.shape, dtype=np.float32, name="Power")
 
     @cached
@@ -358,7 +365,7 @@ class TransposeOp(Op):
         if len(income.shape) != 2:
             raise TypeError("Transpose Op only support 2-dimensional tensor, but `%s` is %d-dimensional" % (income.name, len(income.shape)))
         shape = (income.shape[1], income.shape[0])
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(TransposeOp, self).__init__(shape=shape, dtype=income.dtype, name="Transpose")
 
     @cached
@@ -382,7 +389,7 @@ class MatMulOp(Op):
             raise TypeError("MatMulOp: dimension not compatible. `%s` and `%s`" % (t1.shape, t2.shape))
         self.t1 = t1
         self.t2 = t2
-        self.direct_dependencies = {t1, t2}
+        self.direct_dependencies = [t1, t2]
         super(MatMulOp, self).__init__(shape=shape, dtype=t1.dtype, name="MatMul")
 
     @cached

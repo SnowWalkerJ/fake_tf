@@ -17,21 +17,34 @@ class Graph:
         self.variables = {}
         self.constants = {}
         self.trainable = set()
-        self.mute = False
+        self.mute = 0
+        self.__cache = 0
+
+    @property
+    def cache(self):
+        return self.__cache
+
+    @cache.setter
+    def cache(self, value):
+        if self.__cache > 0 and value == 0:
+            for tensor in self.tensors.values():
+                tensor.cache = False
+        elif value > 0 and self.__cache == 0:
+            for tensor in self.tensors.values():
+                tensor.cache = True
+        self.__cache = max(value, 0)
 
     @contextmanager
     def compute_gradients(self):
-        self.mute = True
+        self.mute += 1
         yield
-        self.mute = False
+        self.mute -= 1
 
     @contextmanager
     def enable_cache(self):
-        for tensor in self.tensors.values():
-            tensor.cache = True
+        self.cache += 1
         yield
-        for tensor in self.tensors.values():
-            tensor.cache = False
+        self.cache -= 1
 
     def add_tensor(self, tensor):
         if tensor.name in self.tensors:

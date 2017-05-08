@@ -26,7 +26,7 @@ class ReverseReduceOp(Op):
             axis = list(axis)
         self.axis = axis
         self.expand_dims = {ax: original_shape[ax] for ax in axis}
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(ReverseReduceOp, self).__init__(shape=original_shape, dtype=income.dtype, name="ReverseReduce")
 
     def get_gradients(self, uplevel=None):
@@ -50,7 +50,7 @@ class ReduceSumOp(Op):
         self.income = income
         self.axis = handle_axis(income, axis)
         shape = tuple(self.income.shape[i] for i in range(len(income.shape)) if i not in self.axis)
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(ReduceSumOp, self).__init__(shape=shape, dtype=income.dtype, name="ReduceSum")
 
     def get_gradients(self, uplevel=None):
@@ -70,7 +70,7 @@ class ReduceMeanOp(Op):
         self.income = income
         self.axis = handle_axis(income, axis)
         shape = tuple(self.income.shape[i] for i in range(len(income.shape)) if i not in self.axis)
-        self.direct_dependencies = {income}
+        self.direct_dependencies = [income]
         super(ReduceMeanOp, self).__init__(shape=shape, dtype=income.dtype, name="ReduceMean")
 
     def get_gradients(self, uplevel=None):
