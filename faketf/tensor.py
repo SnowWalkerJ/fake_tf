@@ -267,7 +267,6 @@ class Op(Tensor):
         return tree
 
 
-
 class AddOp(Op):
     def __init__(self, t1: Tensor, t2: Tensor):
         # if t1.shape != t2.shape:
