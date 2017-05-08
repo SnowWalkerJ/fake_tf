@@ -254,6 +254,19 @@ class Op(Tensor):
             uplevel = Constant(np.ones(self.shape, dtype=self.dtype))
         return {k: uplevel*v for k, v in self.gradients.items()}
 
+    def tree(self):
+        tree = {}
+        for tensor in self.direct_dependencies:
+            if isinstance(tensor, (Constant, Variable, Placeholder)):
+                tree[tensor] = tensor
+            elif isinstance(tensor, Op):
+                if tensor.name.startswith("G_"):
+                    tree[tensor] = tensor.tree()
+                else:
+                    tree[tensor] = tensor
+        return tree
+
+
 
 class AddOp(Op):
     def __init__(self, t1: Tensor, t2: Tensor):

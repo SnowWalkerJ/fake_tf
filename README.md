@@ -9,7 +9,7 @@ Of course, all the calculations are done on CPU without multiprocess.
 - ~~operations such as abs, pow~~
 - cache for repeated constants and operations
 - ~~random initialization~~
-- None in placeholder shape
+- ~~None in placeholder shape~~
 - ~~activation functions~~
 - ~~SGD~~
 - higher end apis
@@ -24,7 +24,7 @@ import numpy as np
 x = Placeholder([100, 5], name="x")
 y_real = Placeholder([100, 1], name="real")
 y = fully_connected(x, 1)
-loss = reduce_mean(abs(y - y_real))  # for now power is not realized yet
+loss = reduce_mean((y - y_real) ** 2)
 trainer = SGD(loss, learning_rate=0.01)
 
 x_values = np.random.randn(100, 5)
